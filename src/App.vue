@@ -149,12 +149,27 @@ const traduzirPosicao = (pos: string): string => {
   };
   return posicoes[pos] || pos;
 };
-// Função para tratar imagens quebradas de forma segura
 const substituirImagemPorPadrao = (event: Event) => {
   const elemento = event.target as HTMLImageElement;
+  
+  // 1. Pega a URL original da foto que falhou (enviada pela API-Football)
+  const urlOriginal = elemento.src;
+
+  // 2. Se a imagem falhou e ainda não tentamos usar o proxy, injetamos o CorsProxy
+  // Isso quebra o bloqueio 403 do servidor deles e força a imagem real a carregar
+  if (urlOriginal && !urlOriginal.includes('cors-anywhere') && !urlOriginal.includes('images.weserv.nl')) {
+    // Usamos o wsrv.nl, um proxy de imagens ultra rápido e gratuito
+    elemento.src = `https://images.unsplash.com/proxy?url=${encodeURIComponent(urlOriginal)}`;
+    
+    // Alternativa direta caso a de cima tenha instabilidade:
+    elemento.src = `https://images.weserv.nl/?url=${urlOriginal.replace('https://', '')}`;
+    return;
+  }
+
+  // 3. Fallback absoluto: Se até o proxy falhar (ex: jogador sem foto cadastrada na API)
+  // Mostra um card cinza padrão sem quebrar o layout
   elemento.src = 'https://cdn-icons-png.flaticon.com/512/2102/2102633.png';
 };
-
 // Gatilho do Ciclo de Vida
 onMounted(() => {
   carregarPaises();
